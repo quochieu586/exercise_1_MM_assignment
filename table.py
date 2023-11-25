@@ -1,94 +1,116 @@
 import pandas as pd
+import numpy as np
+from scipy.stats import binom
 
-supply_data = [
-    ["product_1", "unit_1", 1],
-    ["product_1", "unit_2", 1],
-    ["product_1", "unit_3", 1],
-    ["product_1", "unit_4", 1],
-    ["product_1", "unit_5", 1],
-    ["product_1", "unit_6", 1],
-    ["product_1", "unit_7", 1],
-    ["product_1", "unit_8", 1],
-    ["product_2", "unit_1", 1],
-    ["product_2", "unit_2", 1],
-    ["product_2", "unit_3", 1],
-    ["product_2", "unit_4", 1],
-    ["product_2", "unit_5", 1],
-    ["product_2", "unit_6", 1],
-    ["product_2", "unit_7", 1],
-    ["product_2", "unit_8", 1],
-    ["product_3", "unit_1", 1],
-    ["product_3", "unit_2", 1],
-    ["product_3", "unit_3", 1],
-    ["product_3", "unit_4", 1],
-    ["product_3", "unit_5", 1],
-    ["product_3", "unit_6", 1],
-    ["product_3", "unit_7", 1],
-    ["product_3", "unit_8", 1],
-    ["product_4", "unit_1", 1],
-    ["product_4", "unit_2", 1],
-    ["product_4", "unit_3", 1],
-    ["product_4", "unit_4", 1],
-    ["product_4", "unit_5", 1],
-    ["product_4", "unit_6", 1],
-    ["product_4", "unit_7", 1],
-    ["product_4", "unit_8", 1],
-    ["product_5", "unit_1", 1],
-    ["product_5", "unit_2", 1],
-    ["product_5", "unit_3", 1],
-    ["product_5", "unit_4", 1],
-    ["product_5", "unit_5", 1],
-    ["product_5", "unit_6", 1],
-    ["product_5", "unit_7", 1],
-    ["product_5", "unit_8", 1],
-]
+r_values = list(range(11))
+dist = [binom.pmf(r, 10, 0.5) for r in r_values]
+
+supply_data_frame = []
+
+try:
+    lines = open("supply_matrix.txt").readlines()
+    for line in lines:
+        num = line.split()
+        arr = []
+        for s in num:
+            arr.append(int(s))
+        supply_data_frame.append(arr)
+except OSError:
+    print("Can not read supply_matrix.txt file")
+    supply_data_frame = [   # default value
+        [1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1]
+    ]
+
+
+supply_data = []
+for i in range(5):
+    for j in range(8):
+        prod_str = "product_" + str(i+1)
+        unit_str = "unit_" + str(j+1)
+        supply_data.append([prod_str, unit_str, supply_data_frame[i][j]])
 
 supply_matrix = pd.DataFrame(
     supply_data,
     columns=["product", "unit", "supply"]
 ).set_index(["product", "unit"])
 
-demand_1 = pd.DataFrame(
-    [["product_1", 4],
-    ["product_2", 4],
-    ["product_3", 4],
-    ["product_4", 4],
-    ["product_5", 4]],
-    columns=["product", "demand_1"]
-).set_index("product")
+demand = []
 
-demand_2 = pd.DataFrame(
-    [["product_1", 6],
-    ["product_2", 6],
-    ["product_3", 6],
-    ["product_4", 6],
-    ["product_5", 6]],
-    columns=["product", "demand_1"]
-).set_index("product")
+demand.append(
+    pd.DataFrame(
+        [["product_1", np.random.choice(np.arange(0,11), p=dist)],
+        ["product_2", np.random.choice(np.arange(0,11), p=dist)],
+        ["product_3", np.random.choice(np.arange(0,11), p=dist)],
+        ["product_4", np.random.choice(np.arange(0,11), p=dist)],
+        ["product_5", np.random.choice(np.arange(0,11), p=dist)]],
+        columns=["product", "demand_0"]
+    ).set_index("product")
+)
 
-demand = [demand_1, demand_2]
+demand.append(
+    pd.DataFrame(
+        [["product_1", np.random.choice(np.arange(0,11), p=dist)],
+        ["product_2", np.random.choice(np.arange(0,11), p=dist)],
+        ["product_3", np.random.choice(np.arange(0,11), p=dist)],
+        ["product_4", np.random.choice(np.arange(0,11), p=dist)],
+        ["product_5", np.random.choice(np.arange(0,11), p=dist)]],
+        columns=["product", "demand_1"]
+    ).set_index("product")
+)
+
+product_cost_data = []
+product_price_data = []
+
+try:
+    lines = open("product.txt").readlines()
+    for i in range (1, 6):
+        line = lines[i].split()
+        product_cost_data.append(["product_" + str(i), int(line[0])])
+        product_price_data.append(["product_" + str(i), int(line[1])])
+except OSError: # default value
+    print("Can not read product.txt file")
+    product_cost_data = [["product_1", 2], ["product_2", 2],["product_3", 2], ["product_4", 2],["product_5", 2]]
+    product_price_data = [["product_1", 1], ["product_2", 1],["product_3", 1], ["product_4", 1],["product_5", 1]]
 
 product_cost = pd.DataFrame(
-    [["product_1", 1], ["product_2", 1],["product_3", 1], ["product_4", 1],["product_5", 1]],
-    columns=["product", "cost"]
+    product_cost_data,
+    columns=["product", "cost\n(l_i)"]
 ).set_index("product")
 
-unit_cost = pd.DataFrame(
-    [["unit_1", 1],
-    ["unit_2", 1],
-    ["unit_3", 1],
-    ["unit_4", 1],
-    ["unit_5", 1],
-    ["unit_6", 1],
-    ["unit_7", 1],
-    ["unit_8", 1]],
-    columns=["unit", "cost"]
+product_selling_price = pd.DataFrame(
+    product_price_data,
+    columns=["product", "selling price\n(q_i)"]
+).set_index("product")
+
+unit_price_data = []
+
+try:
+    lines = open("unit.txt").readlines()
+    for j in range (1,9):
+        unit_price_data.append(["unit_"+str(j), int(lines[j].split()[0])])
+except OSError: # default value
+    print("Can not read unit.txt file")
+    unit_price_data = [
+        ["unit_1", 2],
+        ["unit_2", 2],
+        ["unit_3", 2],
+        ["unit_4", 2],
+        ["unit_5", 2],
+        ["unit_6", 2],
+        ["unit_7", 2],
+        ["unit_8", 2]
+    ],
+
+unit_selling_price = pd.DataFrame(
+    unit_price_data,
+    columns=["unit", "selling price\n(s_j)"]
 ).set_index("unit")
 
-def main():
-    frames = [demand_1, demand_2]
-    result = pd.concat(frames)
-    print(result)
+scenerio_num = len(demand)
 
 if __name__ == "__main__":
-    main()
+    pass

@@ -3,8 +3,8 @@ from table import *
 
 m = Container()
 
-i = Set(m, "i", description="product", records=demand[0].index)
-j = Set(m, "j", description="unit", records=unit_cost.index)
+i = Set(m, "i", description="product", records=product_selling_price.index)
+j = Set(m, "j", description="unit", records=unit_selling_price.index)
 
 a_ij = Parameter(
     container=m,
@@ -13,41 +13,47 @@ a_ij = Parameter(
     domain=[i, j],
     records=supply_matrix.reset_index(),
 )
-d_1 = Parameter(m, "d_1", domain=i, description="demand", records=demand[0].reset_index())
-d_2 = Parameter(m, "d_2", domain=i, description="demand", records=demand[1].reset_index())
-d = [d_1, d_2]
+d = [None]*scenerio_num
+for count in range(scenerio_num):
+    d[count] = Parameter(m, "d_" + str(count), domain=i, description="demand", records=demand[count].reset_index())
+
 l = Parameter(m, "l", domain=i, description="product cost", records=product_cost.reset_index())
-s = Parameter(m, "s", domain=j, description="unit cost", records=unit_cost.reset_index())
+q = Parameter(m, "q", domain=i, description="product selling price", records=product_selling_price.reset_index())
+s = Parameter(m, "s", domain=j, description="unit selling price", records=unit_selling_price.reset_index())
 
 x = Variable(m, "x", type="Positive", domain=j)
-y = Variable(m, "y", type="Positive", domain=j)
-z = Variable(m, "z", type="Positive", domain=i)
-y_2 = Variable(m, "y_1", type="Positive", domain=j)
-z_2 = Variable(m, "z_1", type="Positive", domain=i)
+y = [None]*scenerio_num
+z = [None]*scenerio_num
 
-supply = Equation(m, "supply", domain=j, description="supply of unit j to product i")
-supply[j] = y[j] == -x[j] + Sum(i, a_ij[i,j]*z[i])
+supply = [None]*scenerio_num
+demand_constraint = [None]*scenerio_num
 
-supply_2 = Equation(m, "supply_2", domain=j, description="supply of unit j to product i")
-supply_2[j] = y_2[j] == -x[j] + Sum(i, a_ij[i,j]*z_2[i])
+obj = 0
 
-demand_constraint = Equation(m, "demand", domain=i, description="Demand for each product")
-demand_constraint[i] = z[i] <= d[0][i]
+for count in range(scenerio_num):
+    y[count] = Variable(m, "y" + str(count), type="Positive", domain=j)
+    z[count] = Variable(m, "z" + str(count), type="Positive", domain=i)
+    supply[count] = Equation(
+        m, "supply" + str(count),
+        domain=j, description="supply of unit j to product i"
+    )
+    supply[count][j] = y[count][j] == x[j] - Sum(i, a_ij[i,j]*z[count][i])
 
-demand_constraint_2 = Equation(m, "demand_2", domain=i, description="Demand for each product")
-demand_constraint_2[i] = z_2[i] <= d[1][i]
+    demand_constraint[count] = Equation(
+        m, "demand" + str(count),
+        domain=i, description="Demand for each product"
+    )
+    demand_constraint[count][i] = z[count][i] <= d[count][i]
 
-obj = 1/2*(Sum(i, l[i]*z[i]) - Sum(j, s[j]*y[j]) + Sum(i, l[i]*z_2[i]) - Sum(j, s[j]*y_2[j]))
+    obj += 0.5*Sum(i, (l[i]-q[i])*z[count][i]) - 0.5*Sum(j, s[j]*y[count][j])
 
 transport = Model(
     m, "transport",
-    problem="LP", equations=[supply, supply_2, demand_constraint, demand_constraint_2],
+    problem="LP", equations=m.getEquations(),
     sense=Sense.MIN, objective=obj
 )
 
-transport.solve(solver="CPLEX")
-
 if __name__ == "__main__":
-    print(y.records)
-    print(z.records)
+    print(y[0].records)
+    # print(equationss)
     print(transport.objective_value)
