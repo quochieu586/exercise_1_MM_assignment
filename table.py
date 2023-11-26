@@ -110,7 +110,31 @@ unit_selling_price = pd.DataFrame(
     columns=["unit", "selling price\n(s_j)"]
 ).set_index("unit")
 
+preorder_cost_data = []
+try:
+    lines = open("preorder_cost_unit.txt").readlines()
+    for i in range(1,9):
+        preorder_cost_data.append(["unit_" + str(i), int(lines[i].split()[0])])
+except OSError:
+    print("Can not read preorder_cost_unit.txt")
+    preorder_cost_data = [
+        ["unit_1", 2],
+        ["unit_2", 2],
+        ["unit_3", 2],
+        ["unit_4", 2],
+        ["unit_5", 2],
+        ["unit_6", 2],
+        ["unit_7", 2],
+        ["unit_8", 2]
+    ],
+
+preorder_cost = pd.DataFrame(
+    preorder_cost_data,
+    columns=["unit", "preorder cost\n(b_j)"]
+).set_index("unit")
+
 scenerio_num = len(demand)
 
 if __name__ == "__main__":
+    print(preorder_cost)
     pass
