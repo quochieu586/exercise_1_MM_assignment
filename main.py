@@ -1,5 +1,4 @@
 import math
-
 from tabulate import tabulate
 from model import *
 
